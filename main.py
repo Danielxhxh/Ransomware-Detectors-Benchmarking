@@ -1,14 +1,7 @@
 import argparse
-import logging
 
 from scripts.run_extraction import run_extraction
 from scripts.run_training import run_training
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s: %(message)s',
-    datefmt='%H:%M'
-)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Ransomware Detection Benchmarking Framework")
@@ -27,9 +20,9 @@ def parse_args():
 def main():
     args = parse_args()
 
-    logging.info(f"Framework: {args.framework}")
-    logging.info(f"Model: {args.model}")
-    logging.info(f"Mode: {args.mode}")
+    print(f"Framework: {args.framework}")
+    print(f"Model: {args.model}")
+    print(f"Mode: {args.mode}")
 
     if args.mode in ['extract', 'all']:
         run_extraction(args.framework)

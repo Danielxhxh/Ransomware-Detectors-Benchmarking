@@ -1,12 +1,12 @@
-import logging
+from scripts.utils.load_config import config, BASE_DIR
+from trainers import train_rwguard
+
 
 def run_training(framework: str, model: str):
-    logging.info(f"[run_training] Called with framework: {framework}, model: {model}")
-
     if framework == 'rwguard':
-        print(f"→ Training model '{model}' using RWGuard features...")
+        train_rwguard.train_model(model)
     elif framework == 'shieldfs':
         print(f"→ Training model '{model}' using ShieldFS features...")
     else:
-        logging.error(f"[run_training] Unsupported framework: {framework}")
+        print(f"[run_training] Unsupported framework: {framework}")
         raise ValueError(f"Unknown framework: {framework}")
