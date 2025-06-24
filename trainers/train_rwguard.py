@@ -52,7 +52,7 @@ def train_model(model_name: str):
 
     # ──────────────── Save model ────────────────
 
-    model_path = f"{MODEL_PATH}/rwguard_{model_name}_{TIME_WINDOW}.joblib"
+    model_path = f"{MODEL_PATH}/rwguard_{model_name}_{TIME_WINDOW}sec.joblib"
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     model.save(model_path)
     print(f"Model saved to {model_path}")
