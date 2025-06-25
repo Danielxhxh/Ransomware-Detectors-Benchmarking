@@ -1,11 +1,12 @@
 from scripts.utils.load_config import config, BASE_DIR
-from trainers import train_rwguard
-
+from models.RWGuard.RWGuard import RWGuard
 
 def run_training(framework: str, model: str):
     
     if framework == 'rwguard':
-        train_rwguard.train_model(model)
+        rwguard = RWGuard()
+        rwguard.train_model(model)
+
     elif framework == 'shieldfs':
         print(f"→ Training model '{model}' using ShieldFS features...")
     else:

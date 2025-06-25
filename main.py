@@ -1,7 +1,7 @@
 import argparse
-
 from scripts.run_extraction import run_extraction
 from scripts.run_training import run_training
+from models.RWGuard.RWGuard import RWGuard
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Ransomware Detection Benchmarking Framework")
@@ -29,6 +29,6 @@ def main():
 
     if args.mode in ['train', 'all']:
         run_training(args.framework, args.model)
-
+    
 if __name__ == '__main__':
     main()
