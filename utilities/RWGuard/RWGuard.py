@@ -2,7 +2,7 @@ from collections import defaultdict
 import numpy as np
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
-from ml_models import MODEL_REGISTRY
+from models import MODEL_REGISTRY
 import yaml
 import os
 import gzip
@@ -12,9 +12,9 @@ from datetime import datetime
 from pathlib import Path
 from scripts.utils.load_config import config, BASE_DIR
 
-TIME_WINDOW = config['time_window'] 
-LOGS_PATH = BASE_DIR / 'datasets' / 'raw' / 'ShieldFS-dataset' 
-FEATURES_PATH = BASE_DIR / 'datasets' / 'features' / 'RWGuard'
+TIME_WINDOW = config['RWGuard']['time_window'] 
+LOGS_PATH = BASE_DIR / 'data' / 'ShieldFS-dataset' 
+FEATURES_PATH = BASE_DIR / 'datasets' / 'RWGuard'
 SAVED_MODELS_PATH = BASE_DIR / 'saved_models'
 
 REGULAR_IO = 'IRP'

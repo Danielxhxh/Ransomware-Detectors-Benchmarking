@@ -1,7 +1,7 @@
 import argparse
 from scripts.run_extraction import run_extraction
 from scripts.run_training import run_training
-from models.RWGuard.RWGuard import RWGuard
+from utilities.RWGuard.RWGuard import RWGuard
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Ransomware Detection Benchmarking Framework")

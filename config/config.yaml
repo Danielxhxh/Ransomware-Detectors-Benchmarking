@@ -1,1 +1,6 @@
-time_window: 3
+RWGuard:
+  time_window: 3
+
+ShieldFS:
+  tiers: 5
+  # for each ml_model its own configuration 

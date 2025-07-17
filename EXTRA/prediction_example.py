@@ -1,5 +1,5 @@
 from joblib import load
-from ml_models.random_forest import RandomForestModel
+from models.random_forest import RandomForestModel
 
 model = RandomForestModel()
 model.load('results/rwguard_rf.joblib')

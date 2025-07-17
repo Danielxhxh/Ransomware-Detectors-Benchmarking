@@ -1,8 +1,8 @@
 from scripts.utils.load_config import config, BASE_DIR
-from models.RWGuard.RWGuard import RWGuard
+from utilities.RWGuard.RWGuard import RWGuard
 
 def run_extraction(framework: str):
-    TIME_WINDOW = config['time_window']
+    TIME_WINDOW = config['RWGuard']['time_window']
 
     if framework == 'rwguard':
         rwguard = RWGuard()

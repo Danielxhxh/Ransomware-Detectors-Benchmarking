@@ -1,5 +1,5 @@
 from scripts.utils.load_config import config, BASE_DIR
-from models.RWGuard.RWGuard import RWGuard
+from utilities.RWGuard.RWGuard import RWGuard
 
 def run_training(framework: str, model: str):
     
