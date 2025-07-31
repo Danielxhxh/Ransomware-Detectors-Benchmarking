@@ -51,7 +51,7 @@ TICKS_EXP = {
 }
 
 def load_machine_statistics(machine):
-    statistics_file = BASE_DIR / 'models' / 'ShieldFS' / 'statistics'/ 'machine_statistics.txt'
+    statistics_file = BASE_DIR / 'utilities' / 'ShieldFS' / 'statistics'/ 'machine_statistics.txt'
     with open(statistics_file, 'r') as fp:
         for ln in fp:
             try:
@@ -61,9 +61,9 @@ def load_machine_statistics(machine):
             except:
                 pass
 
-def calculate_file_type_coverage(total_files_accessed, currently_seen_extensionsensions, extension_counts_dict):
+def calculate_file_type_coverage(total_files_accessed, currently_seen_extension, extension_counts_dict):
     sum_counts = 0
-    for ext in currently_seen_extensionsensions:
+    for ext in currently_seen_extension:
         if ext in extension_counts.keys():
             sum_counts = sum_counts + extension_counts_dict[ext]
     if sum_counts == 0:

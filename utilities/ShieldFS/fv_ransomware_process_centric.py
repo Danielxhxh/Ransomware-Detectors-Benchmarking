@@ -8,7 +8,7 @@ from scripts.utils.load_config import config, BASE_DIR
 LOGS_PATH = BASE_DIR / 'data' / 'ShieldFS-dataset'
 FEATURES_PATH = BASE_DIR / 'datasets' / 'ShieldFS' / 'process_centric' / 'ransomware'
 
-tier = 5
+tier = 7
 
 ACTIONS = {
     'FILE_READ': ['IRP_MJ_READ'],
@@ -58,7 +58,7 @@ SESSION_PID_MAP = {
 }
 
 def load_machine_statistics():
-    statistics_file = BASE_DIR / 'models' / 'ShieldFS' / 'statistics' / 'machine_statistics_virtual.txt'
+    statistics_file = BASE_DIR / 'utilities' / 'ShieldFS' / 'statistics' / 'machine_statistics_virtual.txt'
     with open(statistics_file, 'r') as fp:
         for ln in fp:
             try:
