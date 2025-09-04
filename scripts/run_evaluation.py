@@ -2,15 +2,15 @@ from scripts.utils.load_config import config, BASE_DIR
 from utilities.RWGuard.RWGuard import RWGuard
 from utilities.ShieldFS.ShieldFS import ShieldFS
 
-def run_training(framework: str, model: str):
+def run_evaluation(framework: str, saved_model: str):
     
     if framework == 'RWGuard':
         rwguard = RWGuard()
-        rwguard.train_model(model)
+        rwguard.evaluate(saved_model)
 
     elif framework == 'ShieldFS':
         shieldfs = ShieldFS()
-        shieldfs.train_model(model)
+        shieldfs.evaluate(saved_model)
 
     else:
         print(f"[run_training] Unsupported framework: {framework}")

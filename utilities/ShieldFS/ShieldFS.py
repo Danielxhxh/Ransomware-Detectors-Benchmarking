@@ -8,11 +8,16 @@ import gzip
 import sys
 import json
 import csv
+import joblib
 from scripts.utils.load_config import config, BASE_DIR
+from scripts.utils.calculate_hash import calculate_hash
+import re
+
 
 LOGS_PATH = BASE_DIR / 'data' / 'ShieldFS-dataset'
 FEATURES_PATH = BASE_DIR / 'datasets' / 'ShieldFS' / 'process_centric' 
 SAVED_MODELS_PATH = BASE_DIR / 'saved_models'
+TIER = config['ShieldFS']['tiers']
 
 ACTIONS = {
     'FILE_READ': ['IRP_MJ_READ'],
@@ -89,7 +94,6 @@ class ShieldFS:
                 except:
                     pass
 
-
     @staticmethod
     def load_csv_features(path, feature_cols=[0,1,2,3,4,5], label_col=6):
         X, y = [], []
@@ -106,10 +110,8 @@ class ShieldFS:
                     print(f"Row {i} in {path} is malformed: {e}")
         return np.array(X), np.array(y)
 
-    def generate_all_ticks_csv(self, dataset, tier):
-        import re
-
-        folder = FEATURES_PATH / dataset / f"tier{tier}"
+    def generate_all_ticks_csv(self, dataset):
+        folder = FEATURES_PATH / dataset / f"tier{TIER}"
         all_ticks_path = folder / "all_ticks.csv"
 
         def extract_tick_number(path):
@@ -136,7 +138,7 @@ class ShieldFS:
 
         print(f"Generated {all_ticks_path}")
 
-    def extract_ransomware_features(self, tier):
+    def extract_ransomware_features(self):
         features_path = FEATURES_PATH / "ransomware"
         ransomware_logs_path = LOGS_PATH / "ransomware-irp-logs"
         number_folders, number_files, extension_counts = self.load_machine_statistics_ransomware()
@@ -202,7 +204,7 @@ class ShieldFS:
                                     percentage_file_accessed = float(len(seen_files)) / float(number_files) * 100
                                     percentage_file_accessed = round(percentage_file_accessed, 2)
 
-                                    if change and current_tick < len(TICKS_EXP[tier]) and percentage_file_accessed >= TICKS_EXP[tier][current_tick]:
+                                    if change and current_tick < len(TICKS_EXP[TIER]) and percentage_file_accessed >= TICKS_EXP[TIER][current_tick]:
                                         f_coverage = self.calculate_file_type_coverage(nr_files_accessed, seen_extensions, extension_counts)
                                         a = float(num_folder_listings) / float(number_folders)
                                         b = float(num_files_read) / float(number_files)
@@ -226,7 +228,7 @@ class ShieldFS:
             except Exception:
                 continue
 
-            output_dir = features_path / f"tier{tier}"
+            output_dir = features_path / f"tier{TIER}"
             os.makedirs(output_dir, exist_ok=True)
 
             for tick, feature_list in features.items():
@@ -237,7 +239,7 @@ class ShieldFS:
 
             print('Finished Ransomware Session', session_name)
 
-    def extract_benign_features(self, tier):
+    def extract_benign_features(self):
         features_path = FEATURES_PATH / "benign"
         benign_logs_path = LOGS_PATH / "benign-irp-logs"
 
@@ -320,7 +322,7 @@ class ShieldFS:
                                     
                                     # Check if current process tick threshold met, and then if it's in the current bounds
                                     current_tick = process_ticks[process_pid]
-                                    if change and current_tick < len(TICKS_EXP[tier]) and percentage_file_accessed[process_pid] >= TICKS_EXP[tier][current_tick]:
+                                    if change and current_tick < len(TICKS_EXP[TIER]) and percentage_file_accessed[process_pid] >= TICKS_EXP[TIER][current_tick]:
                                         f_coverage = self.calculate_file_type_coverage(nr_files_accessed[process_pid], seen_extensions[process_pid], extension_counts)
                                         a = float(num_folder_listings[process_pid]) / float(number_folders)
                                         b = float(num_files_read[process_pid]) / float(number_files)
@@ -347,7 +349,7 @@ class ShieldFS:
                             print(f"Error processing file {filetoProcess}: {e}")
 
                 # Write features per tick to disk
-                output_dir = features_path / f"tier{tier}"
+                output_dir = features_path / f"tier{TIER}"
                 os.makedirs(output_dir, exist_ok=True)
 
                 for tick, feature_list in features.items():
@@ -358,17 +360,17 @@ class ShieldFS:
 
                 print(f'Finished session {session_name}')
 
-    def train_model(self, model_name, tier):
+    def train_model(self, model_name):
         print("Starting ShieldFS training")
-        benign_features_path = FEATURES_PATH / "benign" / f"tier{tier}" / "all_ticks.csv"
-        ransomware_features_path = FEATURES_PATH / "ransomware" / f"tier{tier}" / "all_ticks.csv"
+        benign_features_path = FEATURES_PATH / "benign" / f"tier{TIER}" / "all_ticks.csv"
+        ransomware_features_path = FEATURES_PATH / "ransomware" / f"tier{TIER}" / "all_ticks.csv"
 
         # Check if files exist, else generate them
         if not benign_features_path.exists():
-            self.generate_all_ticks_csv("benign", tier)
+            self.generate_all_ticks_csv("benign")
 
         if not ransomware_features_path.exists():
-            self.generate_all_ticks_csv("ransomware", tier)
+            self.generate_all_ticks_csv("ransomware")
 
         #  Load and merge datasets 
         benign_x, benign_y = self.load_csv_features(benign_features_path)
@@ -389,7 +391,7 @@ class ShieldFS:
         print("Model training completed")
 
         #  Save model 
-        model_path = SAVED_MODELS_PATH / f"{model_name}_shieldfs_tier{tier}.pkl"
+        model_path = SAVED_MODELS_PATH / f"{calculate_hash('ShieldFS')}.pkl"
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
         model.save(model_path)
         print(f"Model saved to {model_path}")
@@ -400,11 +402,61 @@ class ShieldFS:
         accuracy = metrics.accuracy_score(test_y, predictions)
         print(f"🔎 Test Accuracy: {accuracy:.4f}")
 
-def main():
-    shield_fs = ShieldFS()
-    # shield_fs.extract_ransomware_features(tier=2)
-    # shield_fs.extract_benign_features(tier=2)
-    shield_fs.train_model("naive_bayes", tier=1)
 
-if __name__ == "__main__":
-    main()
+
+    def evaluate(self, saved_model):
+        print(f"📊 Evaluating saved '{saved_model}' model")
+
+        # Paths to features
+        benign_features_path = FEATURES_PATH / "benign" / f"tier{TIER}" / "all_ticks.csv"
+        ransomware_features_path = FEATURES_PATH / "ransomware" / f"tier{TIER}" / "all_ticks.csv"
+
+        # Load datasets
+        benign_x, benign_y = self.load_csv_features(benign_features_path)
+        ransomware_x, ransomware_y = self.load_csv_features(ransomware_features_path)
+
+        X = np.concatenate((benign_x, ransomware_x))
+        y = np.concatenate((benign_y, ransomware_y))
+
+        # Train-test split (same as training)
+        _, test_x, _, test_y = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
+
+        # Load saved model
+        model_path = SAVED_MODELS_PATH / saved_model
+        if not model_path.exists():
+            print(f"❌ No saved model found at {model_path}")
+            return
+
+        model = joblib.load(model_path)
+        print(f"✅ Loaded model from {model_path}")
+
+        # Predictions
+        predictions = model.predict(test_x)
+
+        # Basic metrics
+        accuracy = metrics.accuracy_score(test_y, predictions)
+        precision = metrics.precision_score(test_y, predictions, average='weighted', zero_division=0)
+        recall = metrics.recall_score(test_y, predictions, average='weighted', zero_division=0)
+        f1 = metrics.f1_score(test_y, predictions, average='weighted', zero_division=0)
+
+        print("\n📈 Performance Metrics:")
+        print(f"  Accuracy : {accuracy:.4f}")
+        print(f"  Precision: {precision:.4f}")
+        print(f"  Recall   : {recall:.4f}")
+        print(f"  F1-score : {f1:.4f}")
+
+        # Detailed classification report
+        print("\n📄 Classification Report:")
+        print(metrics.classification_report(test_y, predictions, zero_division=0))
+
+        # Confusion matrix
+        cm = metrics.confusion_matrix(test_y, predictions)
+        print("\n🔍 Confusion Matrix:")
+        print(cm)
+
+        # Optional ROC-AUC (for binary classification)
+        if len(set(test_y)) == 2:
+            y_prob = model.predict_proba(test_x)[:, 1]
+            roc_auc = metrics.roc_auc_score(test_y, y_prob)
+            print(f"\n🏅 ROC AUC: {roc_auc:.4f}")
+        

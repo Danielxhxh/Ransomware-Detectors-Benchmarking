@@ -8,9 +8,11 @@ import os
 import gzip
 import sys
 import csv
+import joblib
 from datetime import datetime
 from pathlib import Path
 from scripts.utils.load_config import config, BASE_DIR
+from scripts.utils.calculate_hash import calculate_hash
 
 TIME_WINDOW = config['RWGuard']['time_window'] 
 LOGS_PATH = BASE_DIR / 'data' / 'ShieldFS-dataset' 
@@ -235,13 +237,70 @@ class RWGuard:
         print("Model training completed")
 
         #  Save model 
-        model_path = SAVED_MODELS_PATH / f"{model_name}_rwguard_{self.time_window}sec.pkl"
+        model_path = SAVED_MODELS_PATH / f"{calculate_hash('RWGuard')}.pkl"
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
         model.save(model_path)
         print(f"Model saved to {model_path}")
 
-        #  Evaluate model 
+        #  Evaluate model  
         print("Evaluating model on test set...")
         predictions = model.predict(test_x)
         accuracy = metrics.accuracy_score(test_y, predictions)
         print(f"🔎 Test Accuracy: {accuracy:.4f}")
+
+    def evaluate(self, saved_model):
+        print(f"📊 Evaluating saved '{saved_model}' model")
+
+        # Paths to features
+        benign_features_path = FEATURES_PATH / f"benign_rwguard_features_{self.time_window}sec.csv"
+        ransomware_features_path = FEATURES_PATH / f"ransomware_rwguard_features_{self.time_window}sec.csv"
+
+        # Load datasets
+        benign_x, benign_y = self.load_csv_features(benign_features_path)
+        ransomware_x, ransomware_y = self.load_csv_features(ransomware_features_path)
+
+        X = np.concatenate((benign_x, ransomware_x))
+        y = np.concatenate((benign_y, ransomware_y))
+
+        # Train-test split (same as training)
+        _, test_x, _, test_y = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
+
+        # Load saved model
+        model_path = SAVED_MODELS_PATH / saved_model
+        if not model_path.exists():
+            print(f"❌ No saved model found at {model_path}")
+            return
+
+        model = joblib.load(model_path)
+        print(f"✅ Loaded model from {model_path}")
+
+        # Predictions
+        predictions = model.predict(test_x)
+
+        # Basic metrics
+        accuracy = metrics.accuracy_score(test_y, predictions)
+        precision = metrics.precision_score(test_y, predictions, average='weighted', zero_division=0)
+        recall = metrics.recall_score(test_y, predictions, average='weighted', zero_division=0)
+        f1 = metrics.f1_score(test_y, predictions, average='weighted', zero_division=0)
+
+        print("\n📈 Performance Metrics:")
+        print(f"  Accuracy : {accuracy:.4f}")
+        print(f"  Precision: {precision:.4f}")
+        print(f"  Recall   : {recall:.4f}")
+        print(f"  F1-score : {f1:.4f}")
+
+        # Detailed classification report
+        print("\n📄 Classification Report:")
+        print(metrics.classification_report(test_y, predictions, zero_division=0))
+
+        # Confusion matrix
+        cm = metrics.confusion_matrix(test_y, predictions)
+        print("\n🔍 Confusion Matrix:")
+        print(cm)
+
+        # Optional ROC-AUC (for binary classification)
+        if len(set(test_y)) == 2:
+            y_prob = model.predict_proba(test_x)[:, 1]
+            roc_auc = metrics.roc_auc_score(test_y, y_prob)
+            print(f"\n🏅 ROC AUC: {roc_auc:.4f}")
+        

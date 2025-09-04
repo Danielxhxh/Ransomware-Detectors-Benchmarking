@@ -1,6 +1,14 @@
 RWGuard:
-  time_window: 3
+  time_window: 5
 
 ShieldFS:
-  tiers: 5
-  # for each ml_model its own configuration 
+  tiers: 1
+  # random_forest:
+  #   n_estimators: 100
+  #   max_depth: 10
+  #   min_samples_split: 2
+  #   min_samples_leaf: 1
+  #   max_features: 'sqrt'
+
+  Redemption:
+    time_window: 2

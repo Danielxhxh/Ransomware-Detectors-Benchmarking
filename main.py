@@ -1,6 +1,8 @@
 import argparse
+from scripts.run_model_check import run_model_check
 from scripts.run_extraction import run_extraction
 from scripts.run_training import run_training
+from scripts.run_evaluation import run_evaluation
 from utilities.RWGuard.RWGuard import RWGuard
 
 def parse_args():
@@ -24,11 +26,18 @@ def main():
     print(f"Model: {args.model}")
     print(f"Mode: {args.mode}")
 
-    if args.mode in ['extract', 'all']:
-        run_extraction(args.framework)
+    # TODO: This check the whole config of a framework
+    # but we only need to check the model
+    
+    exists, saved_model_name = run_model_check(args.framework)
+    if exists:
+        run_evaluation(args.framework, saved_model_name)
+    else:
+        if args.mode in ['extract', 'all']:
+            run_extraction(args.framework)
 
-    if args.mode in ['train', 'all']:
-        run_training(args.framework, args.model)
+        if args.mode in ['train', 'all']:
+            run_training(args.framework, args.model)
     
 if __name__ == '__main__':
     main()
