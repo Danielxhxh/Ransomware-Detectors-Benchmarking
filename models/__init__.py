@@ -4,7 +4,7 @@ from models.naive_bayes import NaiveBayesModel
 
 MODEL_REGISTRY = {
     'random_forest': RandomForestModel,
-    'logistic_regression': RandomForestModel,  
+    'logistic_regression': LogisticRegressionModel,  
     'naive_bayes': NaiveBayesModel
     
 }

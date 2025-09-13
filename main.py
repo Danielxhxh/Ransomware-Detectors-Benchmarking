@@ -14,30 +14,32 @@ def parse_args():
     parser.add_argument('--model', type=str, required=True,
                         help='Classifier model (e.g., random_forest, logistic_regression)')
     
-    parser.add_argument('--mode', choices=['extract', 'train', 'all'], default='all',
+    parser.add_argument('--mode', choices=['extract', 'train', 'evaluate', 'all'], default='all',
                         help='What pipeline stage to run')
 
     return parser.parse_args()
 
 def main():
+    print("\n🚀 Starting Benchmarking Framework\n")
     args = parse_args()
 
-    print(f"Framework: {args.framework}")
-    print(f"Model: {args.model}")
-    print(f"Mode: {args.mode}")
+    print(f"Framework: {args.framework} | Model: {args.model} | Mode: {args.mode}\n")
 
     # TODO: This check the whole config of a framework
     # but we only need to check the model
     
-    exists, saved_model_name = run_model_check(args.framework)
+    exists, saved_model_name = run_model_check(args.framework, args.model)
     if exists:
-        run_evaluation(args.framework, saved_model_name)
+        run_evaluation(args.framework, args.model, saved_model_name)
     else:
         if args.mode in ['extract', 'all']:
             run_extraction(args.framework)
 
         if args.mode in ['train', 'all']:
             run_training(args.framework, args.model)
+
+        if args.mode in ['evaluate', 'all']:
+            run_evaluation(args.framework, args.model, saved_model_name)
     
 if __name__ == '__main__':
     main()

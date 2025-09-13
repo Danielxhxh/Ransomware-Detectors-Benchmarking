@@ -2,12 +2,14 @@ from sklearn.ensemble import RandomForestClassifier
 from joblib import dump, load
 
 class RandomForestModel:
-    def __init__(self, n_estimators=100, max_depth=100, n_jobs=-1):
-        self.model = RandomForestClassifier(
-            n_estimators=n_estimators,
-            max_depth=max_depth,
-            n_jobs=n_jobs
-        )
+    def __init__(self, **kwargs):
+        """
+        Initialize a RandomForestClassifier with hyperparameters from the config.
+        kwargs can include:
+        n_estimators, max_depth, min_samples_split, min_samples_leaf, max_features,
+        bootstrap, class_weight, random_state, n_jobs, etc.
+        """
+        self.model = RandomForestClassifier(**kwargs)
 
     def train(self, X, y):
         self.model.fit(X, y)

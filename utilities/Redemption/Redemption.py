@@ -1,17 +1,42 @@
+from datetime import datetime
 import os
 import gzip
 import csv
+import json
+from typing import Optional, Tuple
 import numpy as np
 from collections import defaultdict
+from dataclasses import dataclass, field
 from sklearn import metrics
 import joblib
 from scripts.utils.load_config import BASE_DIR
 from scripts.utils.calculate_hash import calculate_hash
 
-
 FEATURES_PATH = BASE_DIR / 'datasets' / 'Redemption'
-LOGS_PATH = BASE_DIR / 'data' / 'ShieldFS-dataset'  # reuse same logs
+LOGS_PATH = BASE_DIR / 'data' / 'ShieldFS-dataset' 
 SAVED_MODELS_PATH = BASE_DIR / 'saved_models'
+
+ACTIONS = {
+    'FILE_READ': ['IRP_MJ_READ'],
+    'FILE_WRITE': ['IRP_MJ_WRITE'],
+    'FILE_RENAME_MOVED': ['IRP_MJ_SET_INFORMATION'],
+    'DIRECTORY_LISTING': ['IRP_MJ_DIRECTORY_CONTROL.IRP_MN_QUERY_DIRECTORY'],
+}
+
+EXTENSION_CATEGORY = {
+    "office_doc": {".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt"},
+    "pdf": {".pdf"},
+    "text": {".txt", ".rtf"},
+    "image": {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".svg", ".webp"},
+    "audio": {".mp3", ".wav", ".flac", ".aac", ".ogg"},
+    "video": {".mp4", ".avi", ".mov", ".mkv", ".wmv"},
+    "archive": {".zip", ".rar", ".7z", ".tar", ".gz"},
+    "binary": {".exe", ".dll", ".bin", ".manifest", ".vdf", ".nls"},
+    "code": {".py", ".c", ".cpp", ".java", ".js", ".cs", ".html", ".css"},
+    "config": {".log", ".ini", ".cfg", ".json", ".xml"},
+}
+EXTENSION_LOOKUP = {ext: category for category, exts in EXTENSION_CATEGORY.items() for ext in exts}
+
 
 # Redemption feature weights (from paper)
 FEATURE_WEIGHTS = {
@@ -24,175 +49,196 @@ FEATURE_WEIGHTS = {
 }
 THRESHOLD = 0.12  # MSC threshold
 
+@dataclass
+class FileActivity:
+    last_read_entropy: float = None
+    last_write_entropy: float = None
+    entropy_ratio: float = None
+
+@dataclass
+class ProcessProfile:
+    # r1
+    files: dict = field(default_factory=dict)   # {filename: FileActivity}
+    # r2 TODO
+
+    # r3
+    delete_operation: int = 0
+    # r4
+    dir_writes = defaultdict(set)  # path -> set of unique files written
+    dir_traversals: Optional[float] = None
+    # r5
+    file_classes: set = field(default_factory=set)        # track unique classes
+    convert_type: int = 0 
+    # r6
+    last_write: Tuple[Optional[datetime], str] = (None, "")  # (timestamp,filename)
+    elapsed_time: Optional[float] = None
+    access_frequency: Optional[float] = None
+
+
 class Redemption:
     def __init__(self):
         self.weights = FEATURE_WEIGHTS
         self.threshold = THRESHOLD
 
-    def compute_malice_score(self, feature_vec):
-        """Compute Redemption's MSC score given feature vector"""
-        w_sum = sum(self.weights.values())
-        weighted_sum = (
-            feature_vec[0] * self.weights["entropy_ratio"] +
-            feature_vec[1] * self.weights["content_overwrite"] +
-            feature_vec[2] * self.weights["delete_operation"] +
-            feature_vec[3] * self.weights["dir_traversal"] +
-            feature_vec[4] * self.weights["convert_type"] +
-            feature_vec[5] * self.weights["access_frequency"]
-        )
-        return weighted_sum / w_sum
+    @staticmethod
+    def _get_file_class(filename):
+        _, ext = os.path.splitext(filename.lower())
+        return EXTENSION_LOOKUP.get(ext, "other")
+    
+    @staticmethod
+    def _date_diff_in_seconds(dt2, dt1) -> Optional[float]:
+        delta = (dt2 - dt1).total_seconds()
+        return delta if delta >= 0 else None
+    
+    @staticmethod
+    def _rreplace(s, old, new):
+        return (s[::-1].replace(old[::-1], new[::-1], 1))[::-1]
+    
+    @staticmethod
+    def _safe_float(value: str) -> Optional[float]:
+        try:
+            return float(value.strip())
+        except ValueError:
+            return None
 
-    def extract_features_from_log(self, log_file, label):
-        """
-        Extract Redemption feature vector from a single .gz IRP log.
-        Feature order:
-        [entropy_ratio, content_overwrite, delete_operation,
-         dir_traversal, convert_type, access_frequency, label]
-        """
-        seen_files = set()
-        dirs_accessed = defaultdict(set)
-        extensions = set()
-        last_write_time = None
-        del_flag = 0
-        content_overwrite = 0.0
-        entropy_ratios = []
-        write_deltas = []
+    def _update_access_frequency(self, process: ProcessProfile, parsed_time: datetime, file_accessed: str):
+        if process.last_write[1] == file_accessed:
+            return  # same file → skip
 
-        with gzip.open(log_file, 'rt', encoding='utf-8') as fin:
-            for line in fin:
-                parts = line.strip().split('\t')
-                if len(parts) != 23:
-                    continue
+        if process.last_write[0] is not None:
+            process.elapsed_time = self._date_diff_in_seconds(parsed_time, process.last_write[0])
+            if process.elapsed_time is not None:
+                # Maximum time gap considered "fast access".
+                # If two writes happen within <= delta_cap, access_frequency ≈ 1 (high frequency).
+                # If delta >= delta_cap, access_frequency → 0 (low frequency).
+                delta_cap = 0.1  # seconds
+                process.access_frequency = 1 - min(process.elapsed_time / delta_cap, 1)
+            else:
+                process.access_frequency = None
+        else:
+            process.elapsed_time = None
+            process.access_frequency = None
 
-                major_op = parts[7].strip()
-                minor_op = parts[8].strip()
-                filename = parts[22].strip()
-                entropy = float(parts[21])
+        process.last_write = (parsed_time, file_accessed)
 
-                if filename in ('0.000000000000000', 'cannot get name', ''):
-                    continue
+    @staticmethod
+    def _update_entropy_ratio(file_activity: FileActivity):
+        if file_activity.last_read_entropy is None or file_activity.last_write_entropy is None:
+            return
 
-                # Extract extension and directory
-                _, ext = os.path.splitext(filename)
-                directory = os.path.dirname(filename)
+        if file_activity.last_write_entropy > file_activity.last_read_entropy:
+            file_activity.entropy_ratio = (
+                (file_activity.last_write_entropy - file_activity.last_read_entropy)
+                / file_activity.last_write_entropy
+            )
+        else:
+            file_activity.entropy_ratio = 0.0
 
-                # Feature 1: Entropy ratio (simplified, track entropy of writes)
-                if major_op == "IRP_MJ_WRITE":
-                    entropy_ratios.append(entropy)
-
-                    # Feature 6: Access frequency (delta between writes)
-                    cur_time = parts[2]  # PreOp Time
-                    try:
-                        h, m, s, ms = cur_time.split(':')
-                        t_ms = int(h)*3600000 + int(m)*60000 + int(s)*1000 + int(ms)
-                        if last_write_time is not None:
-                            delta = max(1, t_ms - last_write_time)
-                            write_deltas.append(1.0 / delta)
-                        last_write_time = t_ms
-                    except:
-                        pass
-
-                    # Track overwrite fraction (approx: count multiple writes to same file)
-                    if filename in seen_files:
-                        content_overwrite += 1
-                    seen_files.add(filename)
-
-                    # Directory traversal
-                    dirs_accessed[directory].add(filename)
-
-                    # File type conversion
-                    extensions.add(ext)
-
-                # Feature 3: Delete flag
-                if major_op == "IRP_MJ_SET_INFORMATION" and "DELETE" in minor_op.upper():
-                    del_flag = 1
-
-        # Normalize features
-        entropy_ratio = np.mean(entropy_ratios) if entropy_ratios else 0
-        content_overwrite = content_overwrite / (len(seen_files) + 1e-6)
-        dir_traversal = max(len(files) for files in dirs_accessed.values()) if dirs_accessed else 0
-        convert_type = 1 if len(extensions) > 1 else 0
-        access_frequency = np.mean(write_deltas) if write_deltas else 0
-
-        return [entropy_ratio, content_overwrite, del_flag,
-                dir_traversal, convert_type, access_frequency, label]
-
-    def extract_ransomware_features(self):
-        ransomware_logs_path = LOGS_PATH / "ransomware-irp-logs"
-        features_path = FEATURES_PATH / "ransomware"
-        os.makedirs(features_path, exist_ok=True)
-
-        for session_name in os.listdir(ransomware_logs_path):
-            if not session_name.endswith(".gz"):
-                continue
-            session_path = ransomware_logs_path / session_name
-            vec = self.extract_features_from_log(session_path, "M")
-
-            out_file = features_path / "all_features.csv"
-            with open(out_file, 'a', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(vec)
-
+        
     def extract_benign_features(self):
-        benign_logs_path = LOGS_PATH / "benign-irp-logs"
         features_path = FEATURES_PATH / "benign"
-        os.makedirs(features_path, exist_ok=True)
+        benign_logs_path = LOGS_PATH / "benign-irp-logs"
 
         for machine_name in os.listdir(benign_logs_path):
             machine_path = benign_logs_path / machine_name
             if not machine_path.is_dir():
                 continue
+
+            print(f"Processing machine: {machine_name}")
+
             for session_name in os.listdir(machine_path):
-                session_folder = machine_path / session_name
-                if not session_folder.is_dir():
+                session_folder_path = machine_path / session_name
+                if not session_folder_path.is_dir():
                     continue
-                for log_file in os.listdir(session_folder):
-                    if not log_file.endswith(".gz"):
-                        continue
-                    vec = self.extract_features_from_log(session_folder / log_file, "N")
 
-                    out_file = features_path / "all_features.csv"
-                    with open(out_file, 'a', newline='') as f:
-                        writer = csv.writer(f)
-                        writer.writerow(vec)
+                print(f"Processing session: {session_name}")
 
-    def train_model(self):
-        """
-        For Redemption, "training" just saves weights & threshold.
-        """
-        model_path = SAVED_MODELS_PATH / f"{calculate_hash('Redemption')}.pkl"
-        os.makedirs(os.path.dirname(model_path), exist_ok=True)
-        joblib.dump({"weights": self.weights, "threshold": self.threshold}, model_path)
-        print(f"Saved Redemption rule-based model to {model_path}")
 
-    def evaluate(self, dataset="benign"):
-        """
-        Apply MSC on extracted features and evaluate.
-        """
-        benign_file = FEATURES_PATH / "benign" / "all_features.csv"
-        ransomware_file = FEATURES_PATH / "ransomware" / "all_features.csv"
+                process_state = defaultdict(ProcessProfile)
 
-        X, y, preds = [], [], []
-        for path in [benign_file, ransomware_file]:
-            with open(path) as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    feats = [float(v) for v in row[:-1]]
-                    label = row[-1]
-                    score = self.compute_malice_score(feats)
-                    pred = "M" if score >= self.threshold else "N"
-                    X.append(feats)
-                    y.append(label)
-                    preds.append(pred)
+                for inFile in os.listdir(session_folder_path):
+                    if inFile.endswith(".gz"):
+                        filetoProcess = session_folder_path / inFile
+                        try:
+                            with gzip.open(filetoProcess, 'rt', encoding='utf-8') as fin:
+                                for line in fin:
+                                    line = line.strip().split('\t')
+                                    if len(line) != 23:
+                                        continue
 
-        # Metrics
-        accuracy = metrics.accuracy_score(y, preds)
-        precision = metrics.precision_score(y, preds, pos_label="M")
-        recall = metrics.recall_score(y, preds, pos_label="M")
-        f1 = metrics.f1_score(y, preds, pos_label="M")
+                                    major_op = line[7].strip()
+                                    minor_op = line[8].strip()
+                                    process_pid = line[4].split('.')[0].strip()
+                                    post_time = self._rreplace(line[3].strip(), ':', '.')
+                                    parsed_time = datetime.strptime(post_time, '%H:%M:%S.%f')
+                                    
+                                    file_accessed = line[22].strip()
+                                    m_m = f"{major_op}.{minor_op}"
 
-        print("\n📈 Redemption Performance:")
-        print(f"  Accuracy : {accuracy:.4f}")
-        print(f"  Precision: {precision:.4f}")
-        print(f"  Recall   : {recall:.4f}")
-        print(f"  F1-score : {f1:.4f}")
+                                    # Skip invalid names
+                                    if file_accessed in ('0.000000000000000', 'cannot get name'):
+                                        continue
+
+                                    # Get the process profile
+                                    process = process_state[process_pid]
+
+                                    # Ensure we have a FileActivity for this file
+                                    if file_accessed not in process.files:
+                                        process.files[file_accessed] = FileActivity()
+
+                                    # Update based on operation
+                                    if major_op in ACTIONS['FILE_READ']:
+                                        # 1. Entropy update
+                                        entropy_val = self._safe_float(line[21])
+                                        process.files[file_accessed].last_read_entropy = entropy_val
+
+                                    elif major_op in ACTIONS['FILE_WRITE']:
+                                        # 1. Entropy update
+                                        entropy_val = self._safe_float(line[21])
+                                        process.files[file_accessed].last_write_entropy = entropy_val
+
+                                        # 2. File class tracking
+                                        file_class = self._get_file_class(file_accessed)
+                                        process.file_classes.add(file_class)
+                                        if len(process.file_classes) > 1:
+                                            process.convert_type = 1
+
+                                        # 3. Access frequency (elapsed time)
+                                        self._update_access_frequency(process, parsed_time, file_accessed)
+
+                                        # 4. Entropy ratio
+                                        self._update_entropy_ratio(process.files[file_accessed])
+
+                                        # 5. Used to check directory traversals
+                                        dir_path, filename = os.path.split(file_accessed.replace("\\", "/"))
+                                        process.dir_writes[dir_path].add(filename)
+
+                                        if "/program files/ee9021c84f33366bde80b75efa132836e47afa18b9ce58e8077f4c25d039666c/868810147078daa012ef46d7813f5f19877f232c92631cf5de2543178437e0eb/3d0941964aa3ebdcb00ccef58b1bb399f9f898465e9886d5aec7f31090a0fb30" in dir_path.lower():
+                                            print(f"Dir path: {dir_path}")
+
+                                        Np = len(process.dir_writes[dir_path])  # unique files in this path
+                                        N_MAX = 100  # normalization cap (tunable)
+
+                                        process.dir_traversals = min(Np / N_MAX, 1.0)
+
+                                    elif major_op in ACTIONS['FILE_RENAME_MOVED']:
+                                        # Could be delete/rename
+                                        process.delete_operation += 1
+
+                        except Exception as e:
+                            print(f"Error processing file {filetoProcess}: {e}")
+
+                # # Write features per tick to disk
+                # output_dir = features_path / f"tier{TIER}"
+                # os.makedirs(output_dir, exist_ok=True)
+
+                # for tick, feature_list in features.items():
+                #     output_file = output_dir / f"tick{tick}.csv"
+                #     with open(output_file, 'a', newline='') as fp:
+                #         writer = csv.writer(fp)
+                #         writer.writerows(feature_list)
+                print(f'Finished session {session_name}')
+
+if __name__ == "__main__":
+    redemption = Redemption()
+    redemption.extract_benign_features()

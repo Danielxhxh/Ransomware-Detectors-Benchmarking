@@ -2,14 +2,14 @@ from sklearn.linear_model import LogisticRegression
 from joblib import dump, load
 
 class LogisticRegressionModel:
-    def __init__(self, max_iter=1000, C=1.0, solver='lbfgs', n_jobs=-1):
-        self.model = LogisticRegression(
-            max_iter=max_iter,
-            C=C,
-            solver=solver,
-            n_jobs=n_jobs
-        )
-
+    def __init__(self, **kwargs):
+        """
+        Initialize a LogisticRegression model with hyperparameters from the config.
+        kwargs can include: max_iter, C, solver, n_jobs, penalty, etc.
+        """
+        self.model = LogisticRegression(**kwargs)
+        print("LogisticRegressionModel initialized with parameters:")
+        print(self.model.get_params())
     def train(self, X, y):
         self.model.fit(X, y)
 

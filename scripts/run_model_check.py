@@ -2,8 +2,8 @@ from scripts.utils.load_config import BASE_DIR
 from scripts.utils.calculate_hash import calculate_hash
 import os
 
-def run_model_check(framework: str) -> tuple[bool, str]:
-    hash_value = calculate_hash(framework)
+def run_model_check(framework: str, model: str) -> tuple[bool, str]:
+    hash_value = calculate_hash(framework, model)
     target_file = f"{hash_value}.pkl"
 
     saved_models_path = BASE_DIR / 'saved_models'

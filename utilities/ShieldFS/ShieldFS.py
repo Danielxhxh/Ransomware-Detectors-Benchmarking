@@ -18,6 +18,7 @@ LOGS_PATH = BASE_DIR / 'data' / 'ShieldFS-dataset'
 FEATURES_PATH = BASE_DIR / 'datasets' / 'ShieldFS' / 'process_centric' 
 SAVED_MODELS_PATH = BASE_DIR / 'saved_models'
 TIER = config['ShieldFS']['tiers']
+RESULTS_PATH = BASE_DIR / 'results' / 'ShieldFS'
 
 ACTIONS = {
     'FILE_READ': ['IRP_MJ_READ'],
@@ -97,7 +98,7 @@ class ShieldFS:
     @staticmethod
     def load_csv_features(path, feature_cols=[0,1,2,3,4,5], label_col=6):
         X, y = [], []
-        print(f"Loading features from {path}")
+        print(f"    📂 Loading features from: {path}")
         with open(path) as f:
             reader = csv.reader(f)
             for i, row in enumerate(reader, 1):
@@ -361,7 +362,6 @@ class ShieldFS:
                 print(f'Finished session {session_name}')
 
     def train_model(self, model_name):
-        print("Starting ShieldFS training")
         benign_features_path = FEATURES_PATH / "benign" / f"tier{TIER}" / "all_ticks.csv"
         ransomware_features_path = FEATURES_PATH / "ransomware" / f"tier{TIER}" / "all_ticks.csv"
 
@@ -378,34 +378,29 @@ class ShieldFS:
 
         X = np.concatenate((benign_x, ransomware_x))
         y = np.concatenate((benign_y, ransomware_y))
-        print(f"Loaded {len(X)} total samples ({len(benign_x)} benign, {len(ransomware_x)} ransomware)")
+        print(f"    ⬆ Loaded {len(X)} total samples ({len(benign_x)} benign, {len(ransomware_x)} ransomware)\n")
 
         #  Split data 
         train_x, test_x, train_y, test_y = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
-        print(f"Training set size: {len(train_x)}, Testing set size: {len(test_x)}")
+        print(f"    📊 Training set size: {len(train_x)}, Testing set size: {len(test_x)}")
 
         #  Train model 
-        model = MODEL_REGISTRY[model_name]()
-        print(f"Training '{model_name}' model...")
+        model_params = config["ShieldFS"].get(model_name, {})
+        model_class = MODEL_REGISTRY[model_name]
+        model = model_class(**model_params)
+        
+        print(f"    Training '{model_name}' model...")
         model.train(train_x, train_y)
-        print("Model training completed")
+        print(f"    ✅ Model training completed\n")
 
         #  Save model 
-        model_path = SAVED_MODELS_PATH / f"{calculate_hash('ShieldFS')}.pkl"
+        model_path = SAVED_MODELS_PATH / f"{calculate_hash('ShieldFS', model_name)}.pkl"
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
         model.save(model_path)
-        print(f"Model saved to {model_path}")
 
-        #  Evaluate model 
-        print("Evaluating model on test set...")
-        predictions = model.predict(test_x)
-        accuracy = metrics.accuracy_score(test_y, predictions)
-        print(f"🔎 Test Accuracy: {accuracy:.4f}")
-
-
-
-    def evaluate(self, saved_model):
-        print(f"📊 Evaluating saved '{saved_model}' model")
+    def evaluate(self, model_name, saved_model):
+        # Path to results
+        results_file = RESULTS_PATH / "evaluation_results.csv"
 
         # Paths to features
         benign_features_path = FEATURES_PATH / "benign" / f"tier{TIER}" / "all_ticks.csv"
@@ -424,11 +419,11 @@ class ShieldFS:
         # Load saved model
         model_path = SAVED_MODELS_PATH / saved_model
         if not model_path.exists():
-            print(f"❌ No saved model found at {model_path}")
+            print(f"    ❌ No saved model found at {model_path}\n")
             return
 
         model = joblib.load(model_path)
-        print(f"✅ Loaded model from {model_path}")
+        print(f"    ✅ Loaded model from {model_path}\n")
 
         # Predictions
         predictions = model.predict(test_x)
@@ -440,10 +435,10 @@ class ShieldFS:
         f1 = metrics.f1_score(test_y, predictions, average='weighted', zero_division=0)
 
         print("\n📈 Performance Metrics:")
-        print(f"  Accuracy : {accuracy:.4f}")
-        print(f"  Precision: {precision:.4f}")
-        print(f"  Recall   : {recall:.4f}")
-        print(f"  F1-score : {f1:.4f}")
+        print(f"    Accuracy : {accuracy:.4f}")
+        print(f"    Precision: {precision:.4f}")
+        print(f"    Recall   : {recall:.4f}")
+        print(f"    F1-score : {f1:.4f}")
 
         # Detailed classification report
         print("\n📄 Classification Report:")
@@ -460,3 +455,32 @@ class ShieldFS:
             roc_auc = metrics.roc_auc_score(test_y, y_prob)
             print(f"\n🏅 ROC AUC: {roc_auc:.4f}")
         
+        # --- Save results to CSV ---
+        os.makedirs(results_file.parent, exist_ok=True)
+
+        file_exists = results_file.exists()
+        with open(results_file, "a", newline="") as fp:
+            writer = csv.writer(fp)
+
+            # Write header if file is new
+            if not file_exists:
+                writer.writerow([
+                    "Model", "Model Hash", "Accuracy",
+                    "Precision", "Recall", "F1_score",
+                    "ROC_AUC", "Confusion_Matrix"
+                ])
+
+            # Write row of results
+            writer.writerow([
+                model_name,
+                saved_model,
+                f"{accuracy:.4f}",
+                f"{precision:.4f}",
+                f"{recall:.4f}",
+                f"{f1:.4f}",
+                f"{roc_auc:.4f}" if roc_auc != "" else "",
+                cm.tolist()
+            ])
+
+        print(f"\n    💾 Results saved to {results_file}")
+            
