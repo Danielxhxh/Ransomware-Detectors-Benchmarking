@@ -204,7 +204,7 @@ class ShieldFS:
 
                                     percentage_file_accessed = float(len(seen_files)) / float(number_files) * 100
                                     percentage_file_accessed = round(percentage_file_accessed, 2)
-
+                                    
                                     if change and current_tick < len(TICKS_EXP[TIER]) and percentage_file_accessed >= TICKS_EXP[TIER][current_tick]:
                                         f_coverage = self.calculate_file_type_coverage(nr_files_accessed, seen_extensions, extension_counts)
                                         a = float(num_folder_listings) / float(number_folders)
