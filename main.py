@@ -3,13 +3,12 @@ from scripts.run_model_check import run_model_check
 from scripts.run_extraction import run_extraction
 from scripts.run_training import run_training
 from scripts.run_evaluation import run_evaluation
-from utilities.RWGuard.RWGuard import RWGuard
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Ransomware Detection Benchmarking Framework")
 
     parser.add_argument('--framework', type=str, required=True,
-                        help='Feature extraction framework (e.g., rwguard, shieldfs)')
+                        help='Feature extraction framework (e.g., RWGuard, ShieldFS, CanCal)')
     
     parser.add_argument('--model', type=str, required=True,
                         help='Classifier model (e.g., random_forest, logistic_regression)')

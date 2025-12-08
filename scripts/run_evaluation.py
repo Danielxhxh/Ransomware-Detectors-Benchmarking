@@ -1,6 +1,7 @@
 from scripts.utils.load_config import config, BASE_DIR
 from utilities.RWGuard.RWGuard import RWGuard
 from utilities.ShieldFS.ShieldFS import ShieldFS
+from utilities.CanCal.CanCal import CanCal
 
 def run_evaluation(framework: str, model: str, saved_model: str):
     
@@ -13,6 +14,11 @@ def run_evaluation(framework: str, model: str, saved_model: str):
         print("➡ Evaluating ShieldFS...\n")
         shieldfs = ShieldFS()
         shieldfs.evaluate(model, saved_model)
+
+    elif framework == 'CanCal':
+        print("➡ Evaluating CanCal...\n")
+        cancal = CanCal()
+        cancal.evaluate(model, saved_model)
 
     else:
         print(f"[run_training] Unsupported framework: {framework}")

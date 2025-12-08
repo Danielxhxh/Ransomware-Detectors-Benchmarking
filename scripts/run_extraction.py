@@ -1,7 +1,7 @@
 from scripts.utils.load_config import config, BASE_DIR
 from utilities.RWGuard.RWGuard import RWGuard
 from utilities.ShieldFS.ShieldFS import ShieldFS
-
+from utilities.CanCal.CanCal import CanCal
 
 def handle_extraction(filename, extractor_fn, label: str):
     if filename.exists():
@@ -36,7 +36,19 @@ def run_extraction(framework: str):
 
         handle_extraction(benign_filename, shieldfs.extract_benign_features, "benign")
         handle_extraction(ransom_filename, shieldfs.extract_ransomware_features, "ransomware")
+    
+    elif framework == 'CanCal':
+        TIME_WINDOW = config['CanCal']['time_window']
+        cancal = CanCal()
 
+        print("➡ Extracting CanCal features...\n")
+
+        benign_filename = datasets_path / f'benign_cancal_features_{TIME_WINDOW}sec.csv'
+        ransom_filename = datasets_path / f'ransomware_cancal_features_{TIME_WINDOW}sec.csv'
+
+        handle_extraction(benign_filename, cancal.extract_benign_features, "benign")
+        handle_extraction(ransom_filename, cancal.extract_ransomware_features, "ransomware")
+        
     else:
         raise ValueError(f"Unknown framework: {framework}")
 

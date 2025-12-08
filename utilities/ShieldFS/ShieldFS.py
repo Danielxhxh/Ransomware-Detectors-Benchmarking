@@ -248,7 +248,6 @@ class ShieldFS:
             machine_path = benign_logs_path / machine_name
             if not machine_path.is_dir():
                 continue
-
             print(f"Processing machine: {machine_name}")
 
             number_folders, number_files, extension_counts = self.load_machine_statistics_benign(machine_name)

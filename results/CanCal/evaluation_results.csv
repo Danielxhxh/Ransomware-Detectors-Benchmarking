@@ -1,0 +1,4 @@
+Model,Model Hash,Accuracy,Precision,Recall,F1_score,ROC_AUC,Confusion_Matrix
+random_forest,ec169549c1fd259e7e0af14873fdc830af55cc520f72f3dbad221e30ca9de409.pkl,0.9978,0.9978,0.9978,0.9978,0.9980,"[[687, 17], [4, 9010]]"
+random_forest,ec169549c1fd259e7e0af14873fdc830af55cc520f72f3dbad221e30ca9de409.pkl,0.9978,0.9978,0.9978,0.9978,0.9980,"[[687, 17], [4, 9010]]"
+naive_bayes,69c4750a3db6dd64955f6f0b00d18be8a9c1d62a3dc9a88c2a2f0ae4fd6cf2d6.pkl,0.9765,0.9760,0.9765,0.9762,0.9789,"[[568, 136], [92, 8922]]"
