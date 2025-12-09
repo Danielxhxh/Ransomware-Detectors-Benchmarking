@@ -2,6 +2,7 @@ from collections import defaultdict, Counter
 import numpy as np
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 from models import MODEL_REGISTRY
 import os
 import gzip
@@ -16,6 +17,7 @@ LOGS_PATH = BASE_DIR / 'data' / 'ShieldFS-dataset'
 FEATURES_PATH = BASE_DIR / 'datasets' / 'CanCal'
 SAVED_MODELS_PATH = BASE_DIR / 'saved_models'
 RESULTS_PATH = BASE_DIR / 'results' / 'CanCal'
+SCALER_PATH = BASE_DIR / 'utilities' / 'CanCal' / "scaler.pkl"
 
 # --- GLOBAL CONSTANTS ---
 FILE_RENAME_CODE = '0x000000000000000A' 
@@ -290,7 +292,7 @@ class CanCal:
                 with open(output_file, 'a', newline='') as f:
                     csv.writer(f).writerows(features)
             print(f"Finished session {session_name}")
-
+    
     def train_model(self, model_name):
         benign_features_path = FEATURES_PATH / f"benign_cancal_features_{self.time_window}sec.csv"
         ransomware_features_path = FEATURES_PATH / f"ransomware_cancal_features_{self.time_window}sec.csv"
@@ -307,7 +309,19 @@ class CanCal:
         train_x, test_x, train_y, test_y = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
         print(f"    📊 Training set size: {len(train_x)}, Testing set size: {len(test_x)}")
 
-        #  Train model 
+        # DATA NORMALIZATION (Instead of Bipartite Graphs) 
+        scaler = StandardScaler()
+        
+        train_x = scaler.fit_transform(train_x)
+        test_x = scaler.transform(test_x)
+        
+        print(f"    ⚖️  Data Normalized (StandardScaler applied)")
+        
+        # Save the scaler so you can use it on new data later!
+        scaler_path = SCALER_PATH
+        joblib.dump(scaler, scaler_path)
+        
+        # Train model
         model_params = config["CanCal"].get(model_name, {})
         model_class = MODEL_REGISTRY[model_name]
         model = model_class(**model_params)
@@ -316,7 +330,7 @@ class CanCal:
         model.train(train_x, train_y)
         print(f"    ✅ Model training completed")
 
-        #  Save model 
+        # Save model
         model_path = SAVED_MODELS_PATH / f"{calculate_hash('CanCal', model_name)}.pkl"
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
         model.save(model_path)
@@ -339,7 +353,15 @@ class CanCal:
         # Train-test split (same as training)
         _, test_x, _, test_y = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
 
+        scaler_path = SCALER_PATH
+        if scaler_path.exists():
+            print(f"    ⚖️  Loading saved scaler...")
+            scaler = joblib.load(scaler_path)
+            test_x = scaler.transform(test_x)
+        else:
+            print("    ⚠️  Warning: No scaler found. Testing on raw data (results may be poor).")
         # Load saved model
+        
         model_path = SAVED_MODELS_PATH / saved_model
         if not model_path.exists():
             print(f"    ❌ No saved model found at {model_path}\n")
