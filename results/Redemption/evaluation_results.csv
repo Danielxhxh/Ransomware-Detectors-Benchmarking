@@ -1,0 +1,6 @@
+Model,Model Hash,Accuracy,Precision,Recall,F1_score,ROC_AUC,Confusion_Matrix
+Redemption_Heuristic,Threshold=0.12,0.2946,0.8103,0.2946,0.1786,0.4365,"[[212105, 4109097], [178, 1504128]]"
+Redemption_Heuristic,Threshold=0.3,0.4033,0.7571,0.4033,0.3743,0.4365,"[[927949, 3393253], [82971, 1421335]]"
+Redemption_Heuristic,Threshold=0.4,0.4362,0.6988,0.4362,0.4371,0.4365,"[[1280608, 3040594], [243760, 1260546]]"
+Redemption_Heuristic,Threshold=0.6,0.5230,0.5213,0.5230,0.5221,0.4365,"[[2939677, 1381525], [1397408, 106898]]"
+Redemption_Heuristic,Threshold=0.5,0.5051,0.5537,0.5051,0.5262,0.4365,"[[2611190, 1710012], [1173158, 331148]]"

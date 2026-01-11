@@ -2,6 +2,7 @@ from scripts.utils.load_config import config, BASE_DIR
 from utilities.RWGuard.RWGuard import RWGuard
 from utilities.ShieldFS.ShieldFS import ShieldFS
 from utilities.CanCal.CanCal import CanCal
+from utilities.Redemption.Redemption import Redemption
 
 def handle_extraction(filename, extractor_fn, label: str):
     if filename.exists():
@@ -48,7 +49,16 @@ def run_extraction(framework: str):
 
         handle_extraction(benign_filename, cancal.extract_benign_features, "benign")
         handle_extraction(ransom_filename, cancal.extract_ransomware_features, "ransomware")
-        
+    
+    elif framework == 'Redemption':
+        redemption = Redemption()
+
+        print("➡ Extracting Redemption features...\n")
+        benign_filename = datasets_path / f'benign_redemption_features.csv'
+        ransom_filename = datasets_path / f'ransomware_redemption_features.csv'
+        handle_extraction(benign_filename, redemption.extract_benign_features, "benign")
+        handle_extraction(ransom_filename, redemption.extract_ransomware_features, "ransomware")
+    
     else:
         raise ValueError(f"Unknown framework: {framework}")
 

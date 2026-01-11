@@ -50,6 +50,14 @@ ShieldFS:
 
 Redemption:
   time_window: 2
+  
+  random_forest:
+    n_estimators: 0
+  naive_bayes:
+    var_smoothing: 0    
+
+  logistic_regression:
+    max_iter: 0
 
 
 CanCal:

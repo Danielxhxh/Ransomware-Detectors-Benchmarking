@@ -20,6 +20,9 @@ def run_training(framework: str, model: str):
         cancal = CanCal()        
         cancal.train_model(model)
 
+    elif framework == 'Redemption':
+        print("➡ No training for Redemption...\n")
+
     else:
         print(f"[run_training] Unsupported framework: {framework}\n")
         raise ValueError(f"Unknown framework: {framework}")
