@@ -7,7 +7,7 @@ import re
 from collections import defaultdict
 
 # Add the parent directory to the path so we can import 'scripts'
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from scripts.utils.load_config import config, BASE_DIR
 
@@ -115,7 +115,7 @@ def load_machine_statistics_ransomware():
     return 0, 0, {}
 
 def extract_split_ransomware_features():
-    output_base_path = FEATURES_PATH / f"ransomware_split_ShieldFS_{N_SPLITS}"
+    output_base_path = FEATURES_PATH / f"process_split_ShieldFS_{N_SPLITS}"
     ransomware_logs_path = LOGS_PATH / "ransomware-irp-logs"
     
     print(f"[*] Starting Process Splitting Attack (N={N_SPLITS})")

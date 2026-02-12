@@ -404,8 +404,8 @@ class ShieldFS:
 
         # Paths to features
         benign_features_path = FEATURES_PATH / "benign" / f"tier{TIER}" / "all_ticks.csv"
-        ransomware_features_path = FEATURES_PATH / "ransomware" / f"tier{TIER}" / "all_ticks.csv"
-        # ransomware_features_path = ATTACKS_PATH / "ransomware_split_ShieldFS_10" / f"tier{TIER}" / "all_ticks.csv"
+        # ransomware_features_path = FEATURES_PATH / "ransomware" / f"tier{TIER}" / "all_ticks.csv"
+        ransomware_features_path = ATTACKS_PATH / "functional_split_ShieldFS_5" / f"tier{TIER}" / "all_ticks.csv"
 
         # Load datasets
         benign_x, benign_y = self.load_csv_features(benign_features_path)

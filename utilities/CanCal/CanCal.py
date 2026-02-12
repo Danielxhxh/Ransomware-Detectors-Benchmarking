@@ -18,6 +18,7 @@ FEATURES_PATH = BASE_DIR / 'datasets' / 'CanCal'
 SAVED_MODELS_PATH = BASE_DIR / 'saved_models'
 RESULTS_PATH = BASE_DIR / 'results' / 'CanCal'
 SCALER_PATH = BASE_DIR / 'utilities' / 'CanCal' / "scaler.pkl"
+ATTACKS_PATH = BASE_DIR / 'ATTACKS'
 
 # --- GLOBAL CONSTANTS ---
 FILE_RENAME_CODE = '0x000000000000000A' 
@@ -341,7 +342,8 @@ class CanCal:
         
         # Paths to features
         benign_features_path = FEATURES_PATH / f"benign_cancal_features_{self.time_window}sec.csv"
-        ransomware_features_path = FEATURES_PATH / f"ransomware_cancal_features_{self.time_window}sec.csv"
+        # ransomware_features_path = FEATURES_PATH / f"ransomware_cancal_features_{self.time_window}sec.csv"
+        ransomware_features_path = ATTACKS_PATH / f"functional_split_CanCal_5" / f"ransomware_cancal_features_{self.time_window}sec.csv"
 
         # Load datasets
         benign_x, benign_y = self.load_csv_features(benign_features_path)

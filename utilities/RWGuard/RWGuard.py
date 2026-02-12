@@ -252,7 +252,7 @@ class RWGuard:
         # Paths to features
         benign_features_path = FEATURES_PATH / f"benign_rwguard_features_{self.time_window}sec.csv"
         ransomware_features_path = FEATURES_PATH / f"ransomware_rwguard_features_{self.time_window}sec.csv"
-        # ransomware_features_path = ATTACKS_PATH / "ransomware_split_RWGuard_10" / f"ransomware_rwguard_features_{self.time_window}sec.csv"
+        # ransomware_features_path = ATTACKS_PATH / "functional_split_RWGuard_8" / f"ransomware_rwguard_features_{self.time_window}sec.csv"
 
         # Load datasets
         benign_x, benign_y = self.load_csv_features(benign_features_path)
