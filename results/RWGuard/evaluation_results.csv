@@ -1,2 +1,4 @@
 Model,Model Hash,Accuracy,Precision,Recall,F1_score,ROC_AUC,Confusion_Matrix
 random_forest,9390ba7b9dd3da847299d0eb9d8f9b1d72016ade35107429fb0f9e948f755271.pkl,0.9942,0.9942,0.9942,0.9942,0.9990,"[[351, 4], [2, 682]]"
+random_forest,9390ba7b9dd3da847299d0eb9d8f9b1d72016ade35107429fb0f9e948f755271.pkl,0.9942,0.9942,0.9942,0.9942,0.9990,"[[351, 4], [2, 682]]"
+random_forest,9390ba7b9dd3da847299d0eb9d8f9b1d72016ade35107429fb0f9e948f755271.pkl,0.5014,0.9240,0.5014,0.5908,0.9643,"[[3142, 3804], [0, 684]]"
