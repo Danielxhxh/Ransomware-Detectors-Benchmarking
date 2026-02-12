@@ -342,8 +342,8 @@ class CanCal:
         
         # Paths to features
         benign_features_path = FEATURES_PATH / f"benign_cancal_features_{self.time_window}sec.csv"
-        # ransomware_features_path = FEATURES_PATH / f"ransomware_cancal_features_{self.time_window}sec.csv"
-        ransomware_features_path = ATTACKS_PATH / f"functional_split_CanCal_5" / f"ransomware_cancal_features_{self.time_window}sec.csv"
+        ransomware_features_path = FEATURES_PATH / f"ransomware_cancal_features_{self.time_window}sec.csv"
+        # ransomware_features_path = ATTACKS_PATH / f"mimicry_CanCal" / f"ransomware_cancal_features_{self.time_window}sec.csv"
 
         # Load datasets
         benign_x, benign_y = self.load_csv_features(benign_features_path)
