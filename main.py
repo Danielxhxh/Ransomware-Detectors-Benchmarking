@@ -3,6 +3,7 @@ from scripts.run_model_check import run_model_check
 from scripts.run_extraction import run_extraction
 from scripts.run_training import run_training
 from scripts.run_evaluation import run_evaluation
+from scripts.run_attack_evaluation import run_attack_evaluation
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Ransomware Detection Benchmarking Framework")
@@ -13,7 +14,7 @@ def parse_args():
     parser.add_argument('--model', type=str, required=True,
                         help='Classifier model (e.g., random_forest, logistic_regression)')
     
-    parser.add_argument('--mode', choices=['extract', 'train', 'evaluate', 'all'], default='all',
+    parser.add_argument('--mode', choices=['extract', 'train', 'evaluate', 'evaluate_attack','all'], default='all',
                         help='What pipeline stage to run')
 
     return parser.parse_args()
@@ -28,7 +29,7 @@ def main():
     # but we only need to check the model
     
     exists, saved_model_name = run_model_check(args.framework, args.model)
-    if exists:
+    if exists and args.mode != 'evaluate_attack':
         run_evaluation(args.framework, args.model, saved_model_name)
     else:
         if args.mode in ['extract', 'all']:
@@ -39,6 +40,9 @@ def main():
 
         if args.mode in ['evaluate', 'all']:
             run_evaluation(args.framework, args.model, saved_model_name)
+        
+        if args.mode in ['evaluate_attack']:
+            run_attack_evaluation(args.framework, args.model, saved_model_name)
     
 if __name__ == '__main__':
     main()

@@ -6,17 +6,13 @@ import json
 from collections import defaultdict
 from datetime import datetime
 
-# Add parent directory to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from scripts.utils.load_config import config, BASE_DIR
 
 # --- CONFIGURATION ---
-# The paper achieved full evasion against RWGuard with 8 processes per group (64 total).
 N_SUB_SPLITS = 8 
-# ---------------------
 
-# RWGuard Specific Configs
 TIME_WINDOW = config['RWGuard']['time_window'] 
 FEATURES_PATH = BASE_DIR / 'ATTACKS' 
 LOGS_PATH = BASE_DIR / 'data' / 'ShieldFS-dataset'
@@ -63,7 +59,6 @@ def extract_functional_split_rwguard_features():
     output_base_path = FEATURES_PATH / f"functional_split_RWGuard_{N_SUB_SPLITS}"
     ransomware_logs_path = LOGS_PATH / "ransomware-irp-logs"
     
-    # The output filename matches RWGuard's expected format
     output_file = output_base_path / f"ransomware_rwguard_features_{TIME_WINDOW}sec.csv"
     
     print(f"[*] Starting RWGuard Functional Splitting (N_SUB={N_SUB_SPLITS})")
@@ -71,10 +66,8 @@ def extract_functional_split_rwguard_features():
     print(f"[*] Total Processes per Session: {N_SUB_SPLITS * 8}")
     print(f"[*] Saving to: {output_file}")
 
-    # Create directory
     os.makedirs(output_base_path, exist_ok=True)
 
-    # Clear/Create output file
     with open(output_file, 'w', newline='') as f:
         pass 
 
@@ -101,10 +94,9 @@ def extract_functional_split_rwguard_features():
             'FAST_CLOSE': [create_process_state() for _ in range(N_SUB_SPLITS)]
         }
 
-        # Counters for Round Robin within groups
         group_counters = defaultdict(int)
 
-        global_features = [] # Store all vectors for this session
+        global_features = [] 
 
         try:
             with gzip.open(session_path, 'rt', encoding='utf-8', errors='ignore') as fin:

@@ -6,7 +6,6 @@ import sys
 import re
 from collections import defaultdict
 
-# Add the parent directory to the path so we can import 'scripts'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from scripts.utils.load_config import config, BASE_DIR
@@ -124,7 +123,6 @@ def extract_split_ransomware_features():
 
     number_folders, number_files, extension_counts = load_machine_statistics_ransomware()
 
-    # Create output directory
     os.makedirs(output_base_path / f"tier{TIER}", exist_ok=True)
 
     for session_name in os.listdir(ransomware_logs_path):
@@ -212,8 +210,6 @@ def extract_split_ransomware_features():
                             # Increment op counter only after processing a ransomware line
                             op_counter += 1
 
-                            # If this specific fragment reached a tick, save its vector
-                            # Ensure we don't go out of bounds on TICKS_EXP
                             if change and state['current_tick'] < len(TICKS_EXP[TIER]) and \
                                 percentage_file_accessed >= TICKS_EXP[TIER][state['current_tick']]:
                                 
@@ -223,14 +219,12 @@ def extract_split_ransomware_features():
                                     extension_counts
                                 )
                                 
-                                # Calculate features normalized by TOTAL system files
                                 a = float(state['num_folder_listings']) / float(number_folders)
                                 b = float(state['num_files_read']) / float(number_files)
                                 c = float(state['num_files_written']) / float(number_files)
                                 d = float(state['num_files_renamedmoved']) / float(number_files)
                                 e = state['write_entropy'] / float(state['num_files_written']) if state['num_files_written'] > 0 else 0
                                 
-                                # Label as 'M' (Malicious) to see if it gets detected
                                 state['features'][state['current_tick']].append([a, b, c, d, f_coverage, e, 'M'])
 
                                 # Reset counters for this virtual process
@@ -252,8 +246,7 @@ def extract_split_ransomware_features():
             print(f"Error processing session {session_name}: {e}")
             continue
 
-        # --- SAVE FEATURES FOR ALL SPLITS ---
-        # We iterate through all N virtual processes and save their CSVs
+        # Iterate through all N virtual processes and save their CSVs
         files_saved = 0
         for i, state in enumerate(split_states):
             for tick, feature_list in state['features'].items():

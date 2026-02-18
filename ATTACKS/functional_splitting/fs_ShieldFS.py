@@ -6,13 +6,11 @@ import sys
 import re
 from collections import defaultdict
 
-# Add the parent directory to the path so we can import 'scripts'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from scripts.utils.load_config import config, BASE_DIR
 
 # --- CONFIGURATION ---
-# The paper suggests 5 processes per group (20 total) achieves ~0% detection.
 N_SUB_SPLITS = 5  
 
 FEATURES_PATH = BASE_DIR / 'ATTACKS' 
@@ -201,10 +199,7 @@ def extract_functional_split_features():
                             
                             change = True # By definition, we only entered here if it matched ACTIONS
 
-                            # 3. Update Stats (Only for the specific action type allowed for this group)
-                            # Note: A 'Reader' process will ONLY ever get Read ops, so we don't need 'if' checks here
-                            # but we leave them for safety and logic clarity.
-                            
+                            # 3. Update Stats (Only for the specific action type allowed for this group)                        
                             if target_group_name == 'FILE_READ':
                                 state['num_files_read'] += 1
                                 
@@ -266,7 +261,6 @@ def extract_functional_split_features():
             print(f"Error processing {session_name}: {e}")
             continue
 
-        # --- SAVE FEATURES FOR ALL FUNCTIONAL GROUPS ---
         files_saved = 0
         for group_name, state_list in functional_groups.items():
             for state in state_list:
@@ -279,7 +273,6 @@ def extract_functional_split_features():
         
         print(f"    -> Saved {files_saved} feature batches.")
 
-    # Generate aggregated CSV OUTSIDE the loop
     generate_all_ticks_csv(output_base_path)
 
 if __name__ == "__main__":

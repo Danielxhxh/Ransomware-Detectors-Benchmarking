@@ -6,16 +6,13 @@ import json
 from collections import defaultdict, Counter
 from datetime import datetime
 
-# Add parent directory to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from scripts.utils.load_config import config, BASE_DIR
 
 # --- CONFIGURATION ---
 N_SPLITS = 10 
-# ---------------------
 
-# CanCal Specific Configs
 TIME_WINDOW = config['CanCal']['time_window'] 
 FEATURES_PATH = BASE_DIR / 'ATTACKS' 
 LOGS_PATH = BASE_DIR / 'data' / 'ShieldFS-dataset'
@@ -59,7 +56,6 @@ def extract_split_cancal_features():
 
     os.makedirs(output_base_path, exist_ok=True)
 
-    # Initialize CSV with Header
     feature_names = [
         'n_create', 'n_delete', 'n_renamed', 
         'rtype', 'rtype_change', 
@@ -104,7 +100,7 @@ def extract_split_cancal_features():
 
         try:
             with gzip.open(session_path, 'rt', encoding='utf-8', errors='ignore') as fin:
-                next(fin); next(fin) # Skip header
+                next(fin); next(fin)
 
                 for line in fin:
                     line = line.strip().split('\t')
@@ -125,16 +121,14 @@ def extract_split_cancal_features():
                         target_split_idx = op_counter % N_SPLITS
                         state = split_states[target_split_idx]
                         op_counter += 1
-                        # --------------------------------
 
                         # Initialize time for this split
                         if state['previous_time'] is None:
                             state['previous_time'] = parsed_time
-                            state['ntype_start'] = 0 # Snapshot ntype start
+                            state['ntype_start'] = 0 
 
                         state['current_time'] = parsed_time
                         
-                        # Parse File Details
                         ext, filename, folder = get_file_details(file_full_path)
 
                         # --- CORE LOGIC (Applied to Split State) ---
@@ -220,7 +214,6 @@ def extract_split_cancal_features():
                     except Exception:
                         continue
             
-            # Save vectors for this session
             if global_features:
                 with open(output_file, 'a', newline='') as f:
                     csv.writer(f).writerows(global_features)

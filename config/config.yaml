@@ -49,7 +49,7 @@ ShieldFS:
 
 
 Redemption:
-  time_window: 2
+  time_window: 5
   
   random_forest:
     n_estimators: 0

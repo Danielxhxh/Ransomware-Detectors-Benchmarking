@@ -485,3 +485,89 @@ class ShieldFS:
 
         print(f"\n    💾 Results saved to {results_file}")
             
+    def evaluate_attack(self, model_name, saved_model):
+            results_file = RESULTS_PATH / "evaluation_results.csv"
+            
+            # --- CONFIGURATION: Point this to your ATTACK file ---
+            # attack_path = ATTACKS_PATH / "process_splitting_Redemption_10" / "ransomware_redemption_features_5sec.csv"
+            
+
+            def load_data(path):
+                X, y = [], []
+                if not path.exists(): return np.array(X), np.array(y)
+                print(f"    📂 Loading features from: {path.name}")
+                with open(path, 'r') as f:
+                    reader = csv.reader(f)
+                    for row in reader:
+                        try:
+                            X.append([float(x) for x in row[:6]])
+                            y.append(row[6])
+                        except: pass
+                return np.array(X), np.array(y)
+
+            # --- 2. LOAD ONLY ATTACK DATA ---  
+            print(f"    ⚔️  Loading Attack Data...")
+            test_x, test_y = load_data(attack_path)
+            
+            if len(test_x) == 0:
+                print(f"    ❌ No data found at {attack_path}")
+                return
+
+            # --- 3. NO SPLITTING ---
+            print(f"    📊 Testing on {len(test_x)} samples (100% of generated attack vectors)")
+
+            model_path = SAVED_MODELS_PATH / saved_model
+            if not model_path.exists():
+                print(f"    ❌ Model not found: {model_path}")
+                return
+            
+            model = joblib.load(model_path)
+            print(f"    ✅ Loaded model from {model_path}")
+
+            predictions = model.predict(test_x)
+
+            # Metrics
+            accuracy = metrics.accuracy_score(test_y, predictions)
+            # Note: Precision/F1 might warn if only one class (M) is present, which is expected in attack tests.
+            precision = metrics.precision_score(test_y, predictions, average='weighted', zero_division=0)
+            recall = metrics.recall_score(test_y, predictions, average='weighted', zero_division=0)
+            f1 = metrics.f1_score(test_y, predictions, average='weighted', zero_division=0)
+
+            print("\n📈 Performance Metrics:")
+            print(f"    Accuracy : {accuracy:.4f}")
+            print(f"    Precision: {precision:.4f}")
+            print(f"    Recall   : {recall:.4f}")
+            print(f"    F1-score : {f1:.4f}")
+
+            print("\n📄 Classification Report:")
+            print(metrics.classification_report(test_y, predictions, zero_division=0))
+
+            cm = metrics.confusion_matrix(test_y, predictions)
+            print("\n🔍 Confusion Matrix:")
+            print(cm)
+            
+            # ROC AUC requires 2 classes. If testing ONLY malware, this will skip.
+            roc_auc = ""
+            if len(set(test_y)) == 2:
+                try:
+                    y_prob = model.predict_proba(test_x)[:, 1]
+                    roc_auc = metrics.roc_auc_score(test_y, y_prob)
+                    print(f"\n🏅 ROC AUC: {roc_auc:.4f}")
+                except: pass
+            else:
+                print("\n🏅 ROC AUC: N/A (Only one class present in test set)")
+
+            # Save Results
+            os.makedirs(RESULTS_PATH, exist_ok=True)
+            file_exists = results_file.exists()
+            with open(results_file, "a", newline="") as fp:
+                writer = csv.writer(fp)
+                if not file_exists:
+                    writer.writerow(["Model", "Model Hash", "Accuracy", "Precision", "Recall", "F1_score", "ROC_AUC", "Confusion_Matrix"])
+                
+                writer.writerow([
+                    model_name, saved_model, 
+                    f"{accuracy:.4f}", f"{precision:.4f}", f"{recall:.4f}", f"{f1:.4f}", 
+                    f"{roc_auc:.4f}" if roc_auc != "" else "N/A", cm.tolist()
+                ])
+            print(f"\n    💾 Results saved to {results_file}")

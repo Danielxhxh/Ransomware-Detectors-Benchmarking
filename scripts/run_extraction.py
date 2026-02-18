@@ -51,11 +51,12 @@ def run_extraction(framework: str):
         handle_extraction(ransom_filename, cancal.extract_ransomware_features, "ransomware")
     
     elif framework == 'Redemption':
+        TIME_WINDOW = config['Redemption']['time_window']
         redemption = Redemption()
 
         print("➡ Extracting Redemption features...\n")
-        benign_filename = datasets_path / f'benign_redemption_features.csv'
-        ransom_filename = datasets_path / f'ransomware_redemption_features.csv'
+        benign_filename = datasets_path / f'benign_redemption_features_{TIME_WINDOW}sec.csv'
+        ransom_filename = datasets_path / f'ransomware_redemption_features_{TIME_WINDOW}sec.csv'
         handle_extraction(benign_filename, redemption.extract_benign_features, "benign")
         handle_extraction(ransom_filename, redemption.extract_ransomware_features, "ransomware")
     

@@ -24,7 +24,7 @@ def run_evaluation(framework: str, model: str, saved_model: str):
     elif framework == 'Redemption':
         print("➡ Evaluating Redemption...\n")
         redemption = Redemption()
-        redemption.evaluate()
+        redemption.evaluate(model, saved_model)
 
     else:
         print(f"[run_training] Unsupported framework: {framework}")

@@ -6,18 +6,13 @@ import json
 from collections import defaultdict, Counter
 from datetime import datetime
 
-# Add parent directory to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from scripts.utils.load_config import config, BASE_DIR
 
 # --- CONFIGURATION ---
-# CanCal relies on relationships. Splitting functions breaks these relationships.
-# We use 5 processes per functional group.
 N_SUB_SPLITS = 5
-# ---------------------
 
-# CanCal Specific Configs
 TIME_WINDOW = config['CanCal']['time_window'] 
 FEATURES_PATH = BASE_DIR / 'ATTACKS' 
 LOGS_PATH = BASE_DIR / 'data' / 'ShieldFS-dataset'
@@ -115,7 +110,7 @@ def extract_functional_split_cancal_features():
 
         try:
             with gzip.open(session_path, 'rt', encoding='utf-8', errors='ignore') as fin:
-                next(fin); next(fin) # Skip header
+                next(fin); next(fin) 
 
                 for line in fin:
                     line = line.strip().split('\t')

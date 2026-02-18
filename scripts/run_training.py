@@ -2,6 +2,7 @@ from scripts.utils.load_config import config, BASE_DIR
 from utilities.RWGuard.RWGuard import RWGuard
 from utilities.ShieldFS.ShieldFS import ShieldFS
 from utilities.CanCal.CanCal import CanCal
+from utilities.Redemption.Redemption import Redemption
 
 def run_training(framework: str, model: str):
     
@@ -21,7 +22,9 @@ def run_training(framework: str, model: str):
         cancal.train_model(model)
 
     elif framework == 'Redemption':
-        print("➡ No training for Redemption...\n")
+        print("➡ Training Redemption...\n")
+        redemption = Redemption()
+        redemption.train_model(model)
 
     else:
         print(f"[run_training] Unsupported framework: {framework}\n")

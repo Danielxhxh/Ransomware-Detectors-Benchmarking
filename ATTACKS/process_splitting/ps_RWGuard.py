@@ -6,16 +6,13 @@ import json
 from collections import defaultdict
 from datetime import datetime
 
-# Add parent directory to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from scripts.utils.load_config import config, BASE_DIR
 
 # --- CONFIGURATION ---
 N_SPLITS = 10  # <--- Change this to 10, 50, 100 to test evasion
-# ---------------------
 
-# RWGuard Specific Configs
 TIME_WINDOW = config['RWGuard']['time_window'] 
 FEATURES_PATH = BASE_DIR / 'ATTACKS' 
 LOGS_PATH = BASE_DIR / 'data' / 'ShieldFS-dataset'
@@ -52,18 +49,14 @@ def extract_split_rwguard_features():
     output_base_path = FEATURES_PATH / f"ransomware_split_RWGuard_{N_SPLITS}"
     ransomware_logs_path = LOGS_PATH / "ransomware-irp-logs"
     
-    # The output filename matches RWGuard's expected format
     output_file = output_base_path / f"ransomware_rwguard_features_{TIME_WINDOW}sec.csv"
     
     print(f"[*] Starting RWGuard Process Splitting (N={N_SPLITS})")
     print(f"[*] Time Window: {TIME_WINDOW} seconds")
     print(f"[*] Saving to: {output_file}")
 
-    # Create directory
     os.makedirs(output_base_path, exist_ok=True)
 
-    # Clear/Create output file
-    # We open it in 'w' first to wipe it, then 'a' inside the loop
     with open(output_file, 'w', newline='') as f:
         pass 
 
@@ -93,7 +86,6 @@ def extract_split_rwguard_features():
 
         try:
             with gzip.open(session_path, 'rt', encoding='utf-8', errors='ignore') as fin:
-                # Skip headers
                 next(fin)
                 next(fin)
 
@@ -107,7 +99,6 @@ def extract_split_rwguard_features():
                         process_pid = line[4].split('.')[0].strip()
                         post_time = rreplace(line[3].strip(), ':', '.')
                         
-                        # Only process ransomware lines
                         if process_pid != ransomware_pid:
                             continue
 
@@ -117,7 +108,6 @@ def extract_split_rwguard_features():
                         target_split_idx = op_counter % N_SPLITS
                         state = split_states[target_split_idx]
                         op_counter += 1
-                        # --------------------------------
 
                         # Initialize time for this specific split if new
                         if state['previous_time'] is None:
@@ -136,13 +126,11 @@ def extract_split_rwguard_features():
                                     update_feature(state, 'FAST_' + key.split('_')[1])
 
                         # Check Time Window for this SPECIFIC split
-                        # Logic: Has THIS split been running longer than TIME_WINDOW since its last flush?
                         if date_diff_in_seconds(state['current_time'], state['previous_time']) >= TIME_WINDOW:
                             counts = state['counts']
                             
                             # Only save if there was actual activity
                             if any(counts.values()):
-                                # Append 'M' for Malicious
                                 global_features.append(list(counts.values()) + ['M'])
                             
                             # Reset this split's window and counters
@@ -153,7 +141,6 @@ def extract_split_rwguard_features():
                     except Exception as e:
                         continue
 
-            # Save collected features for this session
             if global_features:
                 with open(output_file, 'a', newline='') as f:
                     csv.writer(f).writerows(global_features)
