@@ -56,7 +56,7 @@ def create_process_state():
     }
 
 def extract_functional_split_rwguard_features():
-    output_base_path = FEATURES_PATH / f"functional_split_RWGuard_{N_SUB_SPLITS}"
+    output_base_path = FEATURES_PATH / f"functional_splitting_RWGuard_{N_SUB_SPLITS}"
     ransomware_logs_path = LOGS_PATH / "ransomware-irp-logs"
     
     output_file = output_base_path / f"ransomware_rwguard_features_{TIME_WINDOW}sec.csv"

@@ -114,7 +114,7 @@ def load_machine_statistics_ransomware():
     return 0, 0, {}
 
 def extract_split_ransomware_features():
-    output_base_path = FEATURES_PATH / f"process_split_ShieldFS_{N_SPLITS}"
+    output_base_path = FEATURES_PATH / f"process_splitting_ShieldFS_{N_SPLITS}"
     ransomware_logs_path = LOGS_PATH / "ransomware-irp-logs"
     
     print(f"[*] Starting Process Splitting Attack (N={N_SPLITS})")

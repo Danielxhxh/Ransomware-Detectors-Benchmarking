@@ -46,7 +46,7 @@ def update_feature(state, key):
     state['counts'][key] += 1
 
 def extract_split_rwguard_features():
-    output_base_path = FEATURES_PATH / f"ransomware_split_RWGuard_{N_SPLITS}"
+    output_base_path = FEATURES_PATH / f"process_splitting_RWGuard_{N_SPLITS}"
     ransomware_logs_path = LOGS_PATH / "ransomware-irp-logs"
     
     output_file = output_base_path / f"ransomware_rwguard_features_{TIME_WINDOW}sec.csv"

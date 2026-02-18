@@ -6,22 +6,22 @@ from utilities.Redemption.Redemption import Redemption
 
 def run_attack_evaluation(framework: str, model: str, saved_model: str):
     
-    # if framework == 'RWGuard':
-    #     print("➡ Evaluating RWGuard...\n")
-    #     rwguard = RWGuard()
-    #     rwguard.evaluate(model, saved_model)
+    if framework == 'RWGuard':
+        print("➡ Evaluating attack on RWGuard...\n")
+        rwguard = RWGuard()
+        rwguard.evaluate_attack(model, saved_model)
 
-    # elif framework == 'ShieldFS':
-    #     print("➡ Evaluating ShieldFS...\n")
-    #     shieldfs = ShieldFS()
-    #     shieldfs.evaluate(model, saved_model)
+    elif framework == 'ShieldFS':
+        print("➡ Evaluating attack on ShieldFS...\n")
+        shieldfs = ShieldFS()
+        shieldfs.evaluate_attack(model, saved_model)
 
-    # elif framework == 'CanCal':
-    #     print("➡ Evaluating CanCal...\n")
-    #     cancal = CanCal()
-    #     cancal.evaluate(model, saved_model)
+    elif framework == 'CanCal':
+        print("➡ Evaluating attack on CanCal...\n")
+        cancal = CanCal()
+        cancal.evaluate_attack(model, saved_model)
 
-    if framework == 'Redemption':
+    elif framework == 'Redemption':
         print("➡ Evaluating attack on Redemption...\n")
         redemption = Redemption()
         redemption.evaluate_attack(model, saved_model)

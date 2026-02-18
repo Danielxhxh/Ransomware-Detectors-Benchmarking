@@ -336,8 +336,9 @@ class RWGuard:
             results_file = RESULTS_PATH / "evaluation_results.csv"
             
             # --- CONFIGURATION: Point this to your ATTACK file ---
-            # attack_path = ATTACKS_PATH / "process_splitting_Redemption_10" / "ransomware_redemption_features_5sec.csv"
-            
+            # attack_path = ATTACKS_PATH / "process_splitting_ShieldFS_10" / "tier1" / "all_ticks.csv"
+            # attack_path = ATTACKS_PATH / "functional_splitting_ShieldFS_5" / "tier1" / "all_ticks.csv"
+            # attack_path = ATTACKS_PATH / "mimicry_ShieldFS" / "tier1" / "all_ticks.csv"            
 
             def load_data(path):
                 X, y = [], []

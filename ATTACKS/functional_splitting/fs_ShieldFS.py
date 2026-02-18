@@ -124,7 +124,7 @@ def create_process_state():
     }
 
 def extract_functional_split_features():
-    output_base_path = FEATURES_PATH / f"functional_split_ShieldFS_{N_SUB_SPLITS}"
+    output_base_path = FEATURES_PATH / f"functional_splitting_ShieldFS_{N_SUB_SPLITS}"
     ransomware_logs_path = LOGS_PATH / "ransomware-irp-logs"
     
     print(f"[*] Starting Functional Splitting Attack (N_SUB={N_SUB_SPLITS})")

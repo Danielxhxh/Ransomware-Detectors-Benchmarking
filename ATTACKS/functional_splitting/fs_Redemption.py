@@ -89,7 +89,7 @@ def _calculate_window_vector(w_state: WindowState) -> List[float]:
     return [r1, r2, r3, r4, r5, r6]
 
 def extract_functional_split_redemption_features():
-    output_base_path = FEATURES_PATH / f"functional_splitting"
+    output_base_path = FEATURES_PATH / f"functional_splitting_Redemption_{N_SUB_SPLITS}"
     ransomware_logs_path = LOGS_PATH / "ransomware-irp-logs"
     
     output_file = output_base_path / f"ransomware_redemption_features_{TIME_WINDOW}sec.csv"

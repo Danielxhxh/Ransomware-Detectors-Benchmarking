@@ -45,7 +45,7 @@ def get_file_details(file_path):
         return None, None, None
 
 def extract_split_cancal_features():
-    output_base_path = FEATURES_PATH / f"ransomware_split_CanCal_{N_SPLITS}"
+    output_base_path = FEATURES_PATH / f"process_splitting_CanCal_{N_SPLITS}"
     ransomware_logs_path = LOGS_PATH / "ransomware-irp-logs"
     
     output_file = output_base_path / f"ransomware_cancal_features_{TIME_WINDOW}sec.csv"
