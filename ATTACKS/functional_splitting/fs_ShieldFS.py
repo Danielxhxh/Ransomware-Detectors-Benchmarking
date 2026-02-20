@@ -56,12 +56,7 @@ TICKS_EXP = {
     28: [100]
 }
 
-SESSION_PID_MAP = {
-    '480bd1ecb1b969e6677c1e11a30cd985e4244e5de04956e2dbb0e6b97c42027e.gz': '2616',
-    '09c278fc0ae3a36170a71e65bba9f92da086fca941ba93051811bf16c6b67f64.gz': '2060',
-    '0d6fb25cde440df0d2b6a676e86b23c47c298f60f8ec461805cc4cd77dd9f730.gz': '3680',
-    'c80d611b38c6ea23cf9d564111a24f245f48df48a5341da896912054dd7d9529.gz': '3684'
-}
+SESSION_PID_MAP = json.loads((LOGS_PATH / 'ransomware-pids.json').read_text()) if (LOGS_PATH / 'ransomware-pids.json').exists() else {}
 
 def generate_all_ticks_csv(output_folder):
     folder = output_folder / f"tier{TIER}"
